@@ -2,6 +2,8 @@ package com.github.marcosblandim.portlet;
 
 import com.github.marcosblandim.constants.ThemeVariablesListPortletKeys;
 
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Theme;
 import com.liferay.portal.kernel.portlet.PortletIdCodec;
 import com.liferay.portal.kernel.portlet.bridges.mvc.MVCPortlet;
@@ -48,71 +50,65 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class ThemeVariablesListPortlet extends MVCPortlet {
 	@Override
 	public void doView(RenderRequest renderRequest, RenderResponse renderResponse) throws IOException, PortletException {
-		// ThemeUtil.doIncludeFTL
+		// based off of ThemeUtil.doIncludeFTL method
 		try {
-		HttpServletRequest httpServletRequest = PortalUtil.getHttpServletRequest(renderRequest);
-		Theme theme = (Theme)httpServletRequest.getAttribute(WebKeys.THEME);
-		ThemeDisplay themeDisplay = (ThemeDisplay)httpServletRequest.getAttribute(WebKeys.THEME_DISPLAY);
-		String path = "portlet.jsp";
+			HttpServletRequest httpServletRequest = PortalUtil.getHttpServletRequest(renderRequest);
+			Theme theme = (Theme)httpServletRequest.getAttribute(WebKeys.THEME);
+			String path = "portlet.jsp";
 
-		String servletContextName = GetterUtil.getString(
-				theme.getServletContextName());
-		ServletContext servletContext = ServletContextPool.get(servletContextName);
+			String servletContextName = GetterUtil.getString(
+					theme.getServletContextName());
+			ServletContext servletContext = ServletContextPool.get(servletContextName);
 
-		if (ServletContextPool.get(servletContextName) == null) {
+			if (ServletContextPool.get(servletContextName) == null) {
 
-			ServletContextPool.put(servletContextName, servletContext);
-		}
-		String portletId = ThemeUtil.getPortletId(httpServletRequest);
+				ServletContextPool.put(servletContextName, servletContext);
+			}
+			String portletId = ThemeUtil.getPortletId(httpServletRequest);
 
-		String resourcePath = theme.getResourcePath(
-				servletContext, portletId, path);
+			String resourcePath = theme.getResourcePath(
+					servletContext, portletId, path);
 
-		if (Validator.isNotNull(portletId) &&
-				PortletIdCodec.hasInstanceId(portletId) &&
-				!TemplateResourceLoaderUtil.hasTemplateResource(
-						TemplateConstants.LANG_TYPE_FTL, resourcePath)) {
+			if (Validator.isNotNull(portletId) &&
+					PortletIdCodec.hasInstanceId(portletId) &&
+					!TemplateResourceLoaderUtil.hasTemplateResource(
+							TemplateConstants.LANG_TYPE_FTL, resourcePath)) {
 
-			String rootPortletId = PortletIdCodec.decodePortletName(portletId);
+				String rootPortletId = PortletIdCodec.decodePortletName(portletId);
 
-			resourcePath = theme.getResourcePath(
-					servletContext, rootPortletId, path);
-		}
+				resourcePath = theme.getResourcePath(
+						servletContext, rootPortletId, path);
+			}
 
-		if (Validator.isNotNull(portletId) &&
-				!TemplateResourceLoaderUtil.hasTemplateResource(
-						TemplateConstants.LANG_TYPE_FTL, resourcePath)) {
+			if (Validator.isNotNull(portletId) &&
+					!TemplateResourceLoaderUtil.hasTemplateResource(
+							TemplateConstants.LANG_TYPE_FTL, resourcePath)) {
 
-			resourcePath = theme.getResourcePath(servletContext, null, path);
-		}
+				resourcePath = theme.getResourcePath(servletContext, null, path).replace("/" + servletContextName, "");
+			}
 
 			if (!TemplateResourceLoaderUtil.hasTemplateResource(
 					TemplateConstants.LANG_TYPE_FTL, resourcePath)) {
 
-	//			_log.error(resourcePath + " does not exist");
-
-
-				super.doView(renderRequest, renderResponse);
+				_log.error(resourcePath + " does not exist");
+				throw new PortletException();
 			}
-
-			resourcePath = theme.getResourcePath(servletContext, null, path).replace("/" + servletContextName, "");
-//			resourcePath = "saa-agrosp-theme_SERVLET_CONTEXT_/templates/portlet.ftl";
-//			resourcePath = "saa-agrosp-theme_SERVLET_CONTEXT_/templates/portal_normal.ftl";
-
-			boolean restricted =false;
 
 			TemplateResource templateResource =
 				TemplateResourceLoaderUtil.getTemplateResource(
 						TemplateConstants.LANG_TYPE_FTL, resourcePath);
 
 			Template template = TemplateManagerUtil.getTemplate(
-				TemplateConstants.LANG_TYPE_FTL, templateResource, restricted);
+				TemplateConstants.LANG_TYPE_FTL, templateResource, false);
 
 			ArrayList<String> themeVariablesNames = new ArrayList<String>(template.keySet());
 			renderRequest.setAttribute("themeVariablesNames", themeVariablesNames);
 		} catch (TemplateException e) {
-			e.printStackTrace();
+			_log.error(e);
 		}
 		super.doView(renderRequest, renderResponse);
 	}
+
+	private static final Log _log = LogFactoryUtil.getLog(
+			ThemeVariablesListPortlet.class);
 }
