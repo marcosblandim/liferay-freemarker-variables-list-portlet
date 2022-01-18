@@ -1,0 +1,4 @@
+Bundle-Name: theme-variables-list
+Bundle-SymbolicName: com.github.marcosblandim
+Bundle-Version: 1.0.0
+Export-Package: com.github.marcosblandim.constants
