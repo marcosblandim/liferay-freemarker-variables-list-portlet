@@ -1,5 +1,5 @@
 # Liferay theme variables list portlet
-Liferay Portlet for listing all the theme variables
+Liferay Portlet for listing all the freemarker context variables
 - in Liferay 7.3, the variables are
   - saxReaderUtil
   - getterUtil
